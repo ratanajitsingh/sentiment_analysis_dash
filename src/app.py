@@ -1,8 +1,12 @@
 import os
 import requests
+from statsmodels.graphics.tukeyplot import results
 from textblob import TextBlob
 from dotenv import load_dotenv
 from datetime import datetime, timedelta
+import streamlit as st
+import plotly.express as px
+
 
 load_dotenv()
 API_KEY = os.getenv("NEWS_API_KEY")
@@ -13,9 +17,9 @@ API_KEY = os.getenv("NEWS_API_KEY")
 def fetch_news(topic):
 
     #creating a buffer for incomplete data
-    buffer = 20
+    buffer = 50
     #define the size required
-    size = 5
+    size = 30
 
     start_date = (datetime.now() - timedelta(days=28)).strftime("%Y-%m-%d")
     if not API_KEY:
@@ -59,9 +63,11 @@ def analyze_sentiment(articles):
         blob = TextBlob(text)
         sentiment = blob.sentiment.polarity
 
+        source_name = article.get("source", "").get('name', 'Unknown Source')
+
         analyzed_data.append({
             'title': title,
-            'description': description,
+            'source': source_name,
             'sentiment': sentiment,
             'url': article['url']
         })
@@ -69,18 +75,58 @@ def analyze_sentiment(articles):
 
     return analyzed_data
 
-#TESTING
+#app and UI creation
+def main():
+    st.set_page_config(page_title="Sentiment Analysis", page_icon="📑")
+
+    st.title("News Sentiment Analysis")
+    st.write("Enter a topic of interest to see the latest sentiment trends.")
+
+    #search
+    topic = st.text_input("Search", "Artificial Intelligence")
+
+    if st.button("Analyze Sentiment"):
+        with st.spinner("Analyzing Sentiment..."):
+            raw_articles = fetch_news(topic)
+
+        #main statistic
+        if raw_articles:
+            result = analyze_sentiment(raw_articles)
+
+            avg_sent = sum(r['sentiment'] for r in result) / len(result)
+
+            col1, col2 = st.columns(2)
+            with col1:
+                st.metric("Amount of articles analyzed", len(result))
+            with col2:
+                sentiment_color = "normal"
+                if avg_sent > 0.1: sentiment_color = "off"
+                st.metric("Average Sentiment", f"{avg_sent:.2f}")
+
+            st.subheader("Sentiment Distribution")
+
+            #the bar chart showing individual sentiments
+            figure = px.bar(result, x = 'title', y = 'sentiment',
+                            color = "sentiment",
+                            range_y = [-1,1],
+                            color_continuous_scale = px.colors.diverging.RdBu,
+                            title = f"Sentiment for top articles on '{topic}'")
+            st.plotly_chart(figure, use_container_width=True)
+
+            #individual articles
+            st.subheader("Top Articles")
+            for res in result:
+                with st.expander(f"{res['source']} - {res['title'][:60]}..."):
+                    st.write(f"**Sentiment Score:** {res['sentiment']:.2f}")
+                    st.write(f"[Read Full article]({res['url']})")
+        else:
+            st.warning("No articles found, switch topic or be broader")
 
 if __name__ == "__main__":
-    test_topic = "Elon Musk"
-    raw_articles = fetch_news(test_topic)
-    results = analyze_sentiment(raw_articles)
-    if raw_articles:
-        for res in results:
-            print(f'\nTitle: {res["title"]}')
-            print(f"Sentiment: {res['sentiment']} Positive" if res['sentiment'] > 0 else f"Sentiment: {res['sentiment']} Negative/Neutral")
-    else:
-        print("No news found, check API key")
+    main()
+
+
+
 
 
 
