@@ -2,6 +2,7 @@ import os
 import requests
 from textblob import TextBlob
 from dotenv import load_dotenv
+from datetime import datetime, timedelta
 
 load_dotenv()
 API_KEY = os.getenv("NEWS_API_KEY")
@@ -11,12 +12,16 @@ API_KEY = os.getenv("NEWS_API_KEY")
 #fetches the top (size) news articles about a topic of choice
 def fetch_news(topic):
 
+    #creating a buffer for incomplete data
+    buffer = 20
     #define the size required
     size = 5
+
+    start_date = (datetime.now() - timedelta(days=28)).strftime("%Y-%m-%d")
     if not API_KEY:
         return []
 
-    url = f"https://newsapi.org/v2/everything?q={topic}&apiKey={API_KEY}&language=en&sortBy=relevancy&pageSize={size}"
+    url = f"https://newsapi.org/v2/everything?q={topic}&apiKey={API_KEY}&language=en&from={start_date}&sortBy=relevancy&pageSize={buffer}"
     try:
         response = requests.get(url)
         data = response.json()
@@ -26,7 +31,15 @@ def fetch_news(topic):
             print(f"Error Alert!: {data.get('message')}")
             return []
 
-        return data.get("articles", [])
+        all_articles = data.get("articles", [])
+
+        #filtering, with the current API sites some news sites such as CNN become redacted, so removing incomplete data
+        valid_articles = []
+        for art in all_articles:
+            if art.get("title") and art["title"] != "[Removed]":
+                valid_articles.append(art)
+
+        return valid_articles[:size]
     except Exception as error:
         print(f"Failed : {error}")
         return []
