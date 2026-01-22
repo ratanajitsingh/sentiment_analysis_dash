@@ -1,6 +1,6 @@
 import os
 import requests
-from textblob import TextBlob
+from vaderSentiment.vaderSentiment import SentimentIntensityAnalyzer
 from dotenv import load_dotenv
 from datetime import datetime, timedelta
 import streamlit as st
@@ -12,6 +12,7 @@ from wordcloud import WordCloud, STOPWORDS
 
 load_dotenv()
 API_KEY = os.getenv("NEWS_API_KEY")
+analyzer = SentimentIntensityAnalyzer()
 
 
 
@@ -63,9 +64,10 @@ def analyze_sentiment(articles):
         # making it a single interactable element
         text = f"{title}\n{description}"
 
-        # using textblob to calculate polarity -1 refers to absolute Negative to +1 refers to absolute Positive
-        blob = TextBlob(text)
-        sentiment = blob.sentiment.polarity
+        # using vaderSentiment to calculate polarity -1 refers to absolute Negative to +1 refers to absolute Positive
+        scores = analyzer.polarity_scores(text)
+        sentiment = scores['compound']
+
 
         source_name = article.get("source", "").get('name', 'Unknown Source')
 
