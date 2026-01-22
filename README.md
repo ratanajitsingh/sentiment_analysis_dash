@@ -43,4 +43,9 @@ This application fetches live news articles based on topics defined by the user,
 * **requirements.txt** : list of all python dependencies 
 * **.env**: not included in repo, stores the API Key
 
+## Screenshots 
+<img width="1902" height="1061" alt="Screenshot 2026-01-22 151254" src="https://github.com/user-attachments/assets/8c7e2f33-0517-4a32-9061-9259b7c8282d" />
+<img width="1904" height="1070" alt="Screenshot 2026-01-22 151320" src="https://github.com/user-attachments/assets/e9a5adc5-c8b5-44c6-a468-9e8122fab808" />
+<img width="1909" height="1072" alt="Screenshot 2026-01-22 151310" src="https://github.com/user-attachments/assets/9a9aa114-cd6d-4a51-88cc-29f3d0c9433f" />
+
 
