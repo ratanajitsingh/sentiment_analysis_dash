@@ -213,7 +213,7 @@ def main():
                 with st.expander(f"{res['source']} - {res['title'][:60]}..."):
                     st.write(f"**Date:**{res['date']}")
                     st.write(f"**Sentiment Score:**{res['sentiment']:.2f}")
-                    st.write(f"[Read Full article]({res['url']}")
+                    st.write(f"[Read Full article]({res['url']})")
         else:
             st.warning("No articles found, switch topic or make it broader")
 

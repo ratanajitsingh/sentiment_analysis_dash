@@ -4,5 +4,5 @@ vaderSentiment
 plotly
 python-dotenv
 pandas
-matplotlib.pyplot
+matplotlib
 wordcloud
