@@ -3,3 +3,6 @@ requests
 textblob
 plotly
 python-dotenv
+pandas
+matplotlib.pyplot
+wordcloud

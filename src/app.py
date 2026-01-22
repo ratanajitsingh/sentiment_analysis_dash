@@ -1,11 +1,13 @@
 import os
 import requests
-from statsmodels.graphics.tukeyplot import results
 from textblob import TextBlob
 from dotenv import load_dotenv
 from datetime import datetime, timedelta
 import streamlit as st
 import plotly.express as px
+import pandas as pd
+import matplotlib.pyplot as plt
+from wordcload import WordCloud, STOPWORDS
 
 
 load_dotenv()
@@ -17,11 +19,12 @@ API_KEY = os.getenv("NEWS_API_KEY")
 def fetch_news(topic):
 
     #creating a buffer for incomplete data
-    buffer = 50
+    buffer = 100
     #define the size required
-    size = 30
+    size = 100
 
-    start_date = (datetime.now() - timedelta(days=28)).strftime("%Y-%m-%d")
+    #this makes sure that it takes in from the last 7 days
+    start_date = (datetime.now() - timedelta(days=7)).strftime("%Y-%m-%d")
     if not API_KEY:
         return []
 
@@ -55,6 +58,7 @@ def analyze_sentiment(articles):
     for article in articles:
         title = article.get("title", '')
         description = article.get("description", '') or ''
+        date_str = article.get("publishedAt", '')
 
         # making it a single interactable element
         text = f"{title}\n{description}"
@@ -69,7 +73,8 @@ def analyze_sentiment(articles):
             'title': title,
             'source': source_name,
             'sentiment': sentiment,
-            'url': article['url']
+            'url': article['url'],
+            'date': date_str,
         })
 
 
@@ -93,7 +98,13 @@ def main():
         if raw_articles:
             result = analyze_sentiment(raw_articles)
 
-            avg_sent = sum(r['sentiment'] for r in result) / len(result)
+            df = pd.DataFrame(result)
+
+            #normalising and converting into datetime object
+            df['date'] = pd.to_datetime(df['date']).dt.date
+
+            avg_sent = df['sentiment'].mean()
+
 
             col1, col2 = st.columns(2)
             with col1:
@@ -103,10 +114,32 @@ def main():
                 if avg_sent > 0.1: sentiment_color = "off"
                 st.metric("Average Sentiment", f"{avg_sent:.2f}")
 
-            st.subheader("Sentiment Distribution")
+            st.markdown("---")
 
+            st.subheader("Weekly Sentiment Trend")
+
+            daily_trend = df.groupby('date')['sentiment'].mean().reset_index()
+
+            daily_trend = daily_trend.sort_values('date')
+
+            line_fig = px.line(
+                daily_trend,
+                x="date",
+                y="sentiment",
+                markers=True,
+                title = f"Average daily Sentiment for '{topic}' for the past week",
+                labels = {'date': 'Date', 'sentiment': 'Average Sentiment'},
+                range_y = [-1, 1]
+            )
+
+            line_fig.add_hline(y = 0, line_dash = "dash", line_color = "gray", annotation_text = "Neutral")
+
+            st.plotly_chart(line_fig, use_container_width=True)
+
+            st.subheader("Sentiment Distribution")
+            top_df = df.head(20)
             #the bar chart showing individual sentiments
-            figure = px.bar(result, x = 'title', y = 'sentiment',
+            figure = px.bar(top_df, x = 'title', y = 'sentiment',
                             color = "sentiment",
                             range_y = [-1,1],
                             color_continuous_scale = px.colors.diverging.RdBu,
@@ -114,13 +147,16 @@ def main():
             st.plotly_chart(figure, use_container_width=True)
 
             #individual articles
-            st.subheader("Top Articles")
-            for res in result:
+            st.subheader("Top 10 Articles")
+
+            for index, res in df.head(10).iterrows():
                 with st.expander(f"{res['source']} - {res['title'][:60]}..."):
-                    st.write(f"**Sentiment Score:** {res['sentiment']:.2f}")
-                    st.write(f"[Read Full article]({res['url']})")
+                    st.write(f"**Date:**{res['date']}")
+                    st.write(f"**Sentiment Score:**{res['sentiment']:.2f}")
+                    st.write(f"[Read Full article]({res['url']}")
         else:
-            st.warning("No articles found, switch topic or be broader")
+            st.warning("No articles found, switch topic or make it broader")
+
 
 if __name__ == "__main__":
     main()
