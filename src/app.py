@@ -7,7 +7,7 @@ import streamlit as st
 import plotly.express as px
 import pandas as pd
 import matplotlib.pyplot as plt
-from wordcload import WordCloud, STOPWORDS
+from wordcloud import WordCloud, STOPWORDS
 
 
 load_dotenv()
@@ -116,6 +116,7 @@ def main():
 
             st.markdown("---")
 
+            #line graph
             st.subheader("Weekly Sentiment Trend")
 
             daily_trend = df.groupby('date')['sentiment'].mean().reset_index()
@@ -136,6 +137,8 @@ def main():
 
             st.plotly_chart(line_fig, use_container_width=True)
 
+
+            #bar graph
             st.subheader("Sentiment Distribution")
             top_df = df.head(20)
             #the bar chart showing individual sentiments
@@ -145,6 +148,29 @@ def main():
                             color_continuous_scale = px.colors.diverging.RdBu,
                             title = f"Sentiment for top articles on '{topic}'")
             st.plotly_chart(figure, use_container_width=True)
+
+            #word cloud section
+            st.subheader("Frequent Keywords")
+
+            #creating big string
+            text_combined = " ".join(title for title in df.title)
+
+            #creating the word cloud object, also removing the topic itself from the cloud
+            custom_sws = set(STOPWORDS)
+            custom_sws.add(topic.lower())
+
+            wordcloud = WordCloud(
+                width = 800,
+                height = 800,
+                background_color = "black",
+                stopwords = custom_sws,
+                colormap= 'viridis',
+            ).generate(text_combined)
+
+            fig,ax = plt.subplots(figsize=(10,5))
+            ax.imshow(wordcloud, interpolation = 'bilinear')
+            ax.axis("off")
+            st.pyplot(fig)
 
             #individual articles
             st.subheader("Top 10 Articles")
