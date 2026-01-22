@@ -25,7 +25,7 @@ This application fetches live news articles based on topics defined by the user,
 ## Installation and set up 
 ### 1. clone repository 
     git clone [https://github.com/yourusername/sentiment-analysis-dash.git](https://github.com/yourusername/sentiment-analysis-dash.git)
-    cd sentiment-analysis-dash
+    cd sentiment_analysis_dash
 ## 2. install dependencies
     pip install -r requirements.txt
 ## 3. Get a NewsAPI Key
